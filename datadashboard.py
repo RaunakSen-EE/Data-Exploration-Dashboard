@@ -1,55 +1,47 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Load the dataset
+# Load data
 @st.cache
 def load_data():
-    df = pd.read_csv('your_dataset.csv')  # Replace 'your_dataset.csv' with the path to your dataset
-    return df
+    data = pd.read_csv('https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv')
+    return data
 
-# Main function to run the app
-def main():
-    # Load the data
-    df = load_data()
+data = load_data()
 
-    # Sidebar - Filters
-    st.sidebar.header('Filter Options')
+# Sidebar
+st.sidebar.header('Filters')
 
-    # Filter by column
-    column_to_filter = st.sidebar.selectbox('Filter by Column', df.columns)
-    filter_value = st.sidebar.text_input(f'Filter by {column_to_filter}')
+# Age filter
+age_slider = st.sidebar.slider('Age', int(data['Age'].min()), int(data['Age'].max()), (int(data['Age'].min()), int(data['Age'].max())))
 
-    # Filter the data
-    filtered_data = df[df[column_to_filter].str.contains(filter_value, case=False)]
+# Class filter
+class_checkbox = st.sidebar.multiselect('Class', sorted(data['Pclass'].unique()), sorted(data['Pclass'].unique()))
 
-    # Display the filtered data
-    st.write(filtered_data)
+# Filter data
+filtered_data = data[(data['Age'] >= age_slider[0]) & (data['Age'] <= age_slider[1]) & (data['Pclass'].isin(class_checkbox))]
 
-    # Sidebar - Visualization Options
-    st.sidebar.header('Visualization Options')
+# Main content
+st.title('Titanic Data Dashboard')
 
-    # Select visualization type
-    visualization_type = st.sidebar.selectbox('Select Visualization Type', ['Histogram', 'Line Plot', 'Scatter Plot'])
+# Show filtered data
+st.subheader('Filtered Data')
+st.write(filtered_data)
 
-    # Main content area
-    st.subheader('Data Visualization')
+# Visualization
+st.subheader('Visualization')
 
-    # Plot based on selected visualization type
-    if visualization_type == 'Histogram':
-        selected_column = st.selectbox('Select column for Histogram', df.columns)
-        plt.hist(df[selected_column])
-        st.pyplot()
-    elif visualization_type == 'Line Plot':
-        x_column = st.selectbox('Select X-axis column', df.columns)
-        y_column = st.selectbox('Select Y-axis column', df.columns)
-        plt.plot(df[x_column], df[y_column])
-        st.pyplot()
-    elif visualization_type == 'Scatter Plot':
-        x_column = st.selectbox('Select X-axis column', df.columns)
-        y_column = st.selectbox('Select Y-axis column', df.columns)
-        plt.scatter(df[x_column], df[y_column])
-        st.pyplot()
+# Bar plot
+st.subheader('Survival Rate by Class')
+survival_rate_by_class = data.groupby('Pclass')['Survived'].mean()
+plt.bar(survival_rate_by_class.index, survival_rate_by_class.values)
+plt.xlabel('Class')
+plt.ylabel('Survival Rate')
+st.pyplot()
 
-if __name__ == '__main__':
-    main()
+# Scatter plot
+st.subheader('Age vs Fare')
+sns.scatterplot(x='Age', y='Fare', data=data, hue='Survived')
+st.pyplot()
