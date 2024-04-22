@@ -1,47 +1,45 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 
-# Load data
-@st.cache
-def load_data():
-    data = pd.read_csv('https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv')
-    return data
+# Page title
+st.title('CSV Data Dashboard')
 
-data = load_data()
+# File upload
+uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
 
-# Sidebar
-st.sidebar.header('Filters')
+if uploaded_file is not None:
+    # Read the uploaded CSV file
+    data = pd.read_csv(uploaded_file)
 
-# Age filter
-age_slider = st.sidebar.slider('Age', int(data['Age'].min()), int(data['Age'].max()), (int(data['Age'].min()), int(data['Age'].max())))
+    # Show the data
+    st.subheader('Data Preview')
+    st.write(data)
 
-# Class filter
-class_checkbox = st.sidebar.multiselect('Class', sorted(data['Pclass'].unique()), sorted(data['Pclass'].unique()))
+    # Summary statistics
+    st.subheader('Summary Statistics')
+    st.write(data.describe())
 
-# Filter data
-filtered_data = data[(data['Age'] >= age_slider[0]) & (data['Age'] <= age_slider[1]) & (data['Pclass'].isin(class_checkbox))]
+    # Data Visualization
+    st.subheader('Data Visualization')
 
-# Main content
-st.title('Titanic Data Dashboard')
+    # Histogram
+    st.subheader('Histogram')
+    selected_column_hist = st.selectbox('Select Column for Histogram', data.columns)
+    plt.hist(data[selected_column_hist].dropna(), bins=20, color='skyblue', edgecolor='black')
+    st.pyplot()
 
-# Show filtered data
-st.subheader('Filtered Data')
-st.write(filtered_data)
+    # Scatter plot
+    st.subheader('Scatter Plot')
+    x_column = st.selectbox('X-axis', data.columns)
+    y_column = st.selectbox('Y-axis', data.columns)
+    plt.scatter(data[x_column], data[y_column], alpha=0.5)
+    plt.xlabel(x_column)
+    plt.ylabel(y_column)
+    st.pyplot()
 
-# Visualization
-st.subheader('Visualization')
-
-# Bar plot
-st.subheader('Survival Rate by Class')
-survival_rate_by_class = data.groupby('Pclass')['Survived'].mean()
-plt.bar(survival_rate_by_class.index, survival_rate_by_class.values)
-plt.xlabel('Class')
-plt.ylabel('Survival Rate')
-st.pyplot()
-
-# Scatter plot
-st.subheader('Age vs Fare')
-sns.scatterplot(x='Age', y='Fare', data=data, hue='Survived')
-st.pyplot()
+    # Pairplot
+    st.subheader('Pairplot')
+    sns.pairplot(data.dropna())
+    st.pyplot()
